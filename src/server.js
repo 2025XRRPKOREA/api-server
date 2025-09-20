@@ -20,7 +20,7 @@ const domainService = require('./domains/domain/services/domainService');
 const exchangeRateService = require('./domains/swap/services/exchangeRateService');
 const swapRate = require('./tasks/swapRate');
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 80;
 
 // Security middleware
 app.use(helmet());

@@ -1,0 +1,40 @@
+name: Deploy Api Server
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18' # 프로젝트 Node 버전
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Install PM2 globally
+        run: npm install -g pm2
+
+      - name: Stop existing PM2 process
+        run: pm2 delete api-server || true
+
+      - name: Start application with PM2
+        run: PORT=80 NODE_ENV=production pm2 start src/server.js --name "api-server"
+
+      - name: Save PM2 configuration
+        run: pm2 save
+
+      - name: Show PM2 status
+        run: pm2 status
