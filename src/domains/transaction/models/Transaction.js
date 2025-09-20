@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const transactionSchema = new mongoose.Schema({
   isSuccess:{
@@ -66,4 +66,4 @@ transactionSchema.methods.toJSON = function() {
   return transaction;
 };
 
-module.exports = mongoose.model('Transaction', transactionSchema);
+export default mongoose.model('Transaction', transactionSchema);

@@ -1,7 +1,7 @@
-const express = require('express')
-const { authMiddleware } = require('../../../shared/middleware/auth')
-const adminDomainService = require('../services/domainService')
-const adminSystemService = require('../../admin/services/adminSystemService')
+import express from 'express'
+import { authMiddleware } from '../../../shared/middleware/auth.js'
+import adminDomainService from '../services/domainService.js'
+import adminSystemService from '../../admin/services/adminSystemService.js'
 
 const router = express.Router()
 
@@ -541,4 +541,4 @@ router.get('/stats', authMiddleware, adminAuthMiddleware, async (req, res) => {
   }
 })
 
-module.exports = router
+export default router

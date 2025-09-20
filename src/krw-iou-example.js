@@ -1,4 +1,4 @@
-const {
+import {
     initializeAdmin,
     issueKRW,
     calculateSwapFee,
@@ -8,9 +8,9 @@ const {
     ADMIN_WALLET,
     KRW_CURRENCY,
     SWAP_FEE_RATE
-} = require('./services/krw-iou-system')
+} from './services/krw-iou-system.js';
 
-const xrpl = require('xrpl')
+import * as xrpl from 'xrpl';
 
 /**
  * 테스트용 사용자 계정 생성
@@ -166,12 +166,12 @@ async function main() {
 }
 
 // 스크립트 직접 실행시
-if (require.main === module) {
-    main().catch(console.error)
+if (import.meta.url === `file://${process.argv[1]}`) {
+    main().catch(console.error);
 }
 
-module.exports = {
+export {
     runExample,
     runMultiUserExample,
     createTestUser
-}
+};

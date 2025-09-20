@@ -1,9 +1,9 @@
-const express = require('express')
-const { authMiddleware } = require('../../../shared/middleware/auth')
-const adminIOUService = require('../services/iouService')
-const adminSystemService = require('../../admin/services/adminSystemService')
-const WalletService = require('../../wallet/services/legacyWalletService');
-const { Client, Wallet } = require('xrpl');
+import express from 'express';
+import { authMiddleware } from '../../../shared/middleware/auth.js';
+import adminIOUService from '../services/iouService.js';
+import adminSystemService from '../../admin/services/adminSystemService.js';
+import WalletService from '../../wallet/services/legacyWalletService.js';
+import { Client, Wallet } from 'xrpl';
 
 const router = express.Router()
 
@@ -452,4 +452,4 @@ router.post('/batch-process-swap', authMiddleware, adminAuthMiddleware, async (r
   }
 })
 
-module.exports = router
+export default router;

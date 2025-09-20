@@ -1,11 +1,11 @@
-const express = require('express')
-const { authMiddleware } = require('../../../shared/middleware/auth')
-const User = require('../../user/models/User')
-const userWalletService = require('../services/walletService')
-const userIOUService = require('../../iou/services/userIOUService')
-const adminDomainService = require('../../domain/services/domainService')
-const { Client, Wallet } = require('xrpl');
-const ExchangeRate = require('../../swap/models/ExchangeRate')
+import express from 'express';
+import { authMiddleware } from '../../../shared/middleware/auth.js';
+import User from '../../user/models/User.js';
+import userWalletService from '../services/walletService.js';
+import userIOUService from '../../iou/services/userIOUService.js';
+import adminDomainService from '../../domain/services/domainService.js';
+import { Client, Wallet } from 'xrpl';
+import ExchangeRate from '../../swap/models/ExchangeRate.js';
 
 const router = express.Router()
 
@@ -376,4 +376,4 @@ router.get('/krw/can-trade', authMiddleware, async (req, res) => {
   }
 })
 
-module.exports = router
+export default router;

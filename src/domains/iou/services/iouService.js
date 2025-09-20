@@ -1,8 +1,8 @@
-const XRPLService = require('../../../shared/services/xrplService')
-const ValidationService = require('../../../shared/services/validationService')
-const adminSystemService = require('../../admin/services/adminSystemService')
-const SwapFeeConfig = require('../../swap/models/SwapFeeConfig')
-const ExchangeRate = require('../../swap/models/ExchangeRate')
+import XRPLService from '../../../shared/services/xrplService.js'
+import ValidationService from '../../../shared/services/validationService.js'
+import adminSystemService from '../../admin/services/adminSystemService.js'
+import SwapFeeConfig from '../../swap/models/SwapFeeConfig.js'
+import ExchangeRate from '../../swap/models/ExchangeRate.js'
 
 // KRW IOU 설정
 const KRW_CURRENCY = "KRW"
@@ -411,4 +411,4 @@ class AdminIOUService {
     }
 }
 
-module.exports = new AdminIOUService()
+export default new AdminIOUService()

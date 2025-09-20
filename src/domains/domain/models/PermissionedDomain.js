@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const permissionedDomainSchema = new mongoose.Schema({
   domain: {
@@ -149,4 +149,4 @@ permissionedDomainSchema.methods.updateKYCStatus = function(accountAddress, stat
   }
 };
 
-module.exports = mongoose.model('PermissionedDomain', permissionedDomainSchema);
+export default mongoose.model('PermissionedDomain', permissionedDomainSchema);

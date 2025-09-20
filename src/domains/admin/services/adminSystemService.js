@@ -1,7 +1,7 @@
-const XRPLService = require('../../../shared/services/xrplService');
-const SystemConfig = require('../models/Admin'); // Admin.js 파일이지만, 내부는 SystemConfig 모델
-const User = require('../../user/models/User');
-const xrpl = require('xrpl');
+import XRPLService from '../../../shared/services/xrplService.js';
+import SystemConfig from '../models/Admin.js'; // Admin.js 파일이지만, 내부는 SystemConfig 모델
+import User from '../../user/models/User.js';
+import * as xrpl from 'xrpl';
 
 class AdminSystemService {
 
@@ -154,4 +154,4 @@ class AdminSystemService {
 }
 
 const adminSystemService = new AdminSystemService();
-module.exports = adminSystemService;
+export default adminSystemService;

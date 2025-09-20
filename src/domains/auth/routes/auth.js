@@ -1,7 +1,7 @@
-const express = require('express');
-const jwt = require('jsonwebtoken');
-const User = require('../../user/models/User');
-const WalletService = require('../../wallet/services/legacyWalletService');
+import express from 'express';
+import jwt from 'jsonwebtoken';
+import User from '../../user/models/User.js';
+import WalletService from '../../wallet/services/legacyWalletService.js';
 
 const router = express.Router();
 
@@ -217,4 +217,4 @@ router.post('/login', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

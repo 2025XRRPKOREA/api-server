@@ -1,4 +1,4 @@
-const mongoose = require('mongoose')
+import mongoose from 'mongoose';
 
 const ExchangeRateSchema = new mongoose.Schema({
   // 기준 통화 (예: XRP)
@@ -170,4 +170,4 @@ ExchangeRateSchema.methods.getSwapRate = function(swapDirection) {
 ExchangeRateSchema.index({ baseCurrency: 1, quoteCurrency: 1, isActive: 1, validFrom: -1 })
 ExchangeRateSchema.index({ validFrom: 1, validTo: 1 })
 
-module.exports = mongoose.model('ExchangeRate', ExchangeRateSchema)
+export default mongoose.model('ExchangeRate', ExchangeRateSchema);

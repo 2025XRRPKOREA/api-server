@@ -1,4 +1,4 @@
-const mongoose = require('mongoose')
+import mongoose from 'mongoose';
 
 const SwapFeeConfigSchema = new mongoose.Schema({
   // 스왑 종류
@@ -175,4 +175,4 @@ SwapFeeConfigSchema.methods.calculateFee = function(amount) {
 SwapFeeConfigSchema.index({ swapType: 1, isActive: 1, effectiveFrom: -1 })
 SwapFeeConfigSchema.index({ effectiveFrom: 1, effectiveTo: 1 })
 
-module.exports = mongoose.model('SwapFeeConfig', SwapFeeConfigSchema)
+export default mongoose.model('SwapFeeConfig', SwapFeeConfigSchema);

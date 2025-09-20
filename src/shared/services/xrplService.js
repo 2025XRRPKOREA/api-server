@@ -1,4 +1,4 @@
-const xrpl = require('xrpl')
+import * as xrpl from 'xrpl';
 
 // 네트워크 설정 (개발용 - testnet 사용)
 const NETWORK = "wss://s.altnet.rippletest.net:51233/"
@@ -136,4 +136,4 @@ class XRPLService {
     }
 }
 
-module.exports = XRPLService
+export default XRPLService;

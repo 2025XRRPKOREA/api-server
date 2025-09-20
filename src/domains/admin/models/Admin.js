@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const systemConfigSchema = new mongoose.Schema({
   // 단 하나의 설정 문서만 존재하도록 보장하는 고유 키
@@ -52,4 +52,4 @@ const systemConfigSchema = new mongoose.Schema({
   timestamps: true
 });
 
-module.exports = mongoose.model('SystemConfig', systemConfigSchema);
+export default mongoose.model('SystemConfig', systemConfigSchema);

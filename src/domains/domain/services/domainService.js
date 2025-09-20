@@ -1,8 +1,8 @@
-const PermissionedDomain = require('../models/PermissionedDomain')
-const Admin = require('../../admin/models/Admin')
-const User = require('../../user/models/User')
-const ValidationService = require('../../../shared/services/validationService')
-const adminSystemService = require('../../admin/services/adminSystemService')
+import PermissionedDomain from '../models/PermissionedDomain.js';
+import Admin from '../../admin/models/Admin.js';
+import User from '../../user/models/User.js';
+import ValidationService from '../../../shared/services/validationService.js';
+import adminSystemService from '../../admin/services/adminSystemService.js';
 
 class AdminDomainService {
 
@@ -397,4 +397,4 @@ class AdminDomainService {
     }
 }
 
-module.exports = new AdminDomainService()
+export default new AdminDomainService();

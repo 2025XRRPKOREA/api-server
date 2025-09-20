@@ -1,5 +1,5 @@
-const ExchangeRate = require('../models/ExchangeRate')
-const SwapFeeConfig = require('../models/SwapFeeConfig')
+import ExchangeRate from '../models/ExchangeRate.js'
+import SwapFeeConfig from '../models/SwapFeeConfig.js'
 
 class AdminExchangeRateService {
 
@@ -377,4 +377,4 @@ class AdminExchangeRateService {
     }
 }
 
-module.exports = new AdminExchangeRateService()
+export default new AdminExchangeRateService()

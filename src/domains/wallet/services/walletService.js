@@ -1,8 +1,8 @@
-const XRPLService = require('../../../shared/services/xrplService')
-const ValidationService = require('../../../shared/services/validationService')
-const adminDomainService = require('../../domain/services/domainService')
-const adminSystemService = require('../../admin/services/adminSystemService')
-const xrpl = require('xrpl')
+import XRPLService from '../../../shared/services/xrplService.js';
+import ValidationService from '../../../shared/services/validationService.js';
+import adminDomainService from '../../domain/services/domainService.js';
+import adminSystemService from '../../admin/services/adminSystemService.js';
+import * as xrpl from 'xrpl';
 
 // KRW IOU 설정
 const KRW_CURRENCY = "KRW"
@@ -290,4 +290,4 @@ class UserWalletService {
     }
 }
 
-module.exports = new UserWalletService()
+export default new UserWalletService();

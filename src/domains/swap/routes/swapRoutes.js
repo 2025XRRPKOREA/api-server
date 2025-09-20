@@ -1,8 +1,8 @@
-const express = require('express')
-const { authMiddleware } = require('../../../shared/middleware/auth')
-const User = require('../../user/models/User')
-const userIOUService = require('../../iou/services/userIOUService')
-const exchangeRateService = require('../services/exchangeRateService')
+import express from 'express'
+import { authMiddleware } from '../../../shared/middleware/auth.js'
+import User from '../../user/models/User.js'
+import userIOUService from '../../iou/services/userIOUService.js'
+import exchangeRateService from '../services/exchangeRateService.js'
 
 const router = express.Router()
 
@@ -130,4 +130,4 @@ router.get('/exchange-rate', async (req, res) => {
   }
 })
 
-module.exports = router
+export default router

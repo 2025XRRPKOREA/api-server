@@ -1,4 +1,4 @@
-const XRPLService = require('./xrplService')
+import XRPLService from './xrplService.js';
 
 class ValidationService {
 
@@ -172,4 +172,4 @@ class ValidationService {
     }
 }
 
-module.exports = ValidationService
+export default ValidationService;

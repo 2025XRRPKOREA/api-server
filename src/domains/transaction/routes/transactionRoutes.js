@@ -1,11 +1,11 @@
-const express = require('express')
-const { authMiddleware } = require('../../../shared/middleware/auth')
-const User = require('../../user/models/User')
-const userIOUService = require('../../iou/services/userIOUService')
-const userTradingService = require('../services/tradingService')
-const Transaction = require('../models/Transaction')
-const { v4: uuidv4 } = require('uuid');
-const { Client, Wallet } = require('xrpl');
+import express from 'express';
+import { authMiddleware } from '../../../shared/middleware/auth.js';
+import User from '../../user/models/User.js';
+import userIOUService from '../../iou/services/userIOUService.js';
+import userTradingService from '../services/tradingService.js';
+import Transaction from '../models/Transaction.js';
+import { v4 as uuidv4 } from 'uuid';
+import { Client, Wallet } from 'xrpl';
 
 const router = express.Router()
 
@@ -433,12 +433,13 @@ router.post('/offer/finish', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'bad request' })
     }
 
-    const transaction = await Transaction.findOne({ qrCode: qrCode});
+    const transaction = await Transaction.findOne({ qrCode: uuid});
     transaction.senderWallet = user.wallet;
 
     const adminWallet = Wallet.fromSeed("sEdSc1R6ZckunYrdi6iG61EKmDAkBY2");
     const userWallet = Wallet.fromSeed(user.wallet.seed);
-    
+
+    // Note: ExchangeRate import needs to be added when converting exchange models
     const latestRecord = await ExchangeRate.findOne({ quoteCurrency: iou })
             .sort({ createdAt: -1 }) 
             .exec();
@@ -709,4 +710,4 @@ router.get('/stats', authMiddleware, async (req, res) => {
   }
 })
 
-module.exports = router
+export default router;

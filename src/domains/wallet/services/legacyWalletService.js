@@ -1,5 +1,5 @@
-const { Client, Wallet, isValidClassicAddress } = require('xrpl');
-const crypto = require('crypto');
+import { Client, Wallet, isValidClassicAddress } from 'xrpl';
+import crypto from 'crypto';
 
 class WalletService {
   constructor() {
@@ -199,4 +199,4 @@ class WalletService {
   }
 }
 
-module.exports = WalletService;
+export default WalletService;

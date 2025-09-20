@@ -1,5 +1,5 @@
-const axios = require('axios');
-const ExchangeRate = require('../domains/swap/models/ExchangeRate');
+import axios from 'axios';
+import ExchangeRate from '../domains/swap/models/ExchangeRate.js';
 
 async function fetchRate(symbol) {
     let ticker = await getTicker(symbol);
@@ -66,4 +66,4 @@ async function getTicker(symbol) {
     }
 }
 
-exports.fetchRate = fetchRate;
+export { fetchRate };

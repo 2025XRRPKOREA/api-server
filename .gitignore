@@ -78,5 +78,3 @@ web_modules/
 *.njsproj
 *.sln
 *.sw?
-
-node_modules/
