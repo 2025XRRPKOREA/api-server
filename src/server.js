@@ -20,7 +20,7 @@ import exchangeRateRoutes from './domains/swap/routes/exchangeRateRoutes.js';
 import adminSystemService from './domains/admin/services/adminSystemService.js';
 import domainService from './domains/domain/services/domainService.js';
 import exchangeRateService from './domains/swap/services/exchangeRateService.js';
-import swapRate from './tasks/swapRate.js';
+import { fetchRate } from './tasks/swapRate.js';
 // Swagger API Docs
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './shared/swagger.js';
@@ -122,7 +122,7 @@ async function startServer() {
 
         // 1분마다 실행 (60,000ms)
         setInterval(async () => {
-            await swapRate.fetchRate("XRP");
+            await fetchRate("XRP");
         }, 10000);
 
     } catch (error) {
