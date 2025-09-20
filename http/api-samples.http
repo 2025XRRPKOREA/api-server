@@ -1,0 +1,33 @@
+### Health Check
+GET http://localhost:3000/health
+
+###
+
+### Auth - Register
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+###
+
+### Auth - Login
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+###
+
+### Auth - Get Profile (requires token)
+GET http://localhost:3000/api/auth/profile
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+###

@@ -1,0 +1,103 @@
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+require('dotenv').config();
+
+// Domain routes
+const authRoutes = require('./domains/auth/routes/auth');
+const walletRoutes = require('./domains/wallet/routes/walletRoutes');
+const transactionRoutes = require('./domains/transaction/routes/transactionRoutes');
+const iouRoutes = require('./domains/iou/routes/iouRoutes');
+const domainRoutes = require('./domains/domain/routes/domainRoutes');
+const swapFeeRoutes = require('./domains/swap/routes/swapFeeRoutes');
+const exchangeRateRoutes = require('./domains/swap/routes/exchangeRateRoutes');
+// Domain services
+const adminSystemService = require('./domains/admin/services/adminSystemService');
+const domainService = require('./domains/domain/services/domainService');
+const exchangeRateService = require('./domains/swap/services/exchangeRateService');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Security middleware
+app.use(helmet());
+app.use(cors());
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+});
+app.use(limiter);
+
+// Body parsing middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+
+// MongoDB connection
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://admin:password123@localhost:27017/xrp_wallet?authSource=admin';
+
+mongoose.connect(MONGODB_URI)
+  .then(() => console.log('Connected to MongoDB'))
+  .catch(err => console.error('MongoDB connection error:', err));
+
+// KRW IOU 시스템 초기화
+async function initializeKRWSystem() {
+  try {
+    console.log('Initializing KRW IOU system...');
+
+    // 1. 어드민 계정 초기화
+    await adminSystemService.initializeAdmin();
+
+    // 2. Permissioned Domain 초기화
+    await domainService.initializeDomain('krw-iou.local');
+
+    // 3. XRPL에 Domain 설정
+    await adminSystemService.setDomainOnXRPL('krw-iou.local');
+
+    // 4. 기본 환율 및 수수료 설정 초기화
+    await exchangeRateService.initializeDefaultRates();
+
+    console.log('KRW IOU system initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize KRW IOU system:', error);
+    // 개발/테스트 환경에서는 에러가 있어도 서버를 계속 실행
+    if (process.env.NODE_ENV === 'production') {
+      throw error;
+    }
+  }
+}
+
+// 서버 시작 전 시스템 초기화
+initializeKRWSystem();
+
+// Domain routes
+app.use('/api/auth', authRoutes);
+app.use('/api/wallet', walletRoutes);
+app.use('/api/transaction', transactionRoutes);
+app.use('/api/admin/iou', iouRoutes);
+app.use('/api/admin/domain', domainRoutes);
+app.use('/api/admin/swap-fee', swapFeeRoutes);
+app.use('/api/admin/exchange-rate', exchangeRateRoutes);
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Something went wrong!' });
+});
+
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});

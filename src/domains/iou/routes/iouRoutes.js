@@ -1,0 +1,230 @@
+const express = require('express')
+const { authMiddleware } = require('../../../shared/middleware/auth')
+const adminIOUService = require('../services/iouService')
+const adminSystemService = require('../../admin/services/adminSystemService')
+
+const router = express.Router()
+
+// 어드민 권한 확인 미들웨어
+const adminAuthMiddleware = async (req, res, next) => {
+  try {
+    const isAdmin = await adminSystemService.verifyAdminPermissions(req.userId)
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' })
+    }
+    next()
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to verify admin permissions' })
+  }
+}
+
+// === IOU 발행 관리 ===
+
+// KRW IOU 직접 발행
+router.post('/issue', authMiddleware, adminAuthMiddleware, async (req, res) => {
+  try {
+    const { userAddress, amount } = req.body
+
+    if (!userAddress || !amount) {
+      return res.status(400).json({ error: 'User address and amount are required' })
+    }
+
+    const result = await adminIOUService.issueKRW(userAddress, amount)
+    res.json(result)
+
+  } catch (error) {
+    console.error('Error issuing KRW:', error)
+    res.status(500).json({ error: 'Failed to issue KRW' })
+  }
+})
+
+// 외부 스왑 처리
+router.post('/process-swap', authMiddleware, adminAuthMiddleware, async (req, res) => {
+  try {
+    const { userAddress, swapAmount, swapDetails = {} } = req.body
+
+    if (!userAddress || !swapAmount) {
+      return res.status(400).json({ error: 'User address and swap amount are required' })
+    }
+
+    const result = await adminIOUService.processSwapAndIssueKRW(
+      userAddress,
+      swapAmount,
+      {
+        ...swapDetails,
+        processedBy: req.userId,
+        timestamp: new Date().toISOString()
+      }
+    )
+    res.json(result)
+
+  } catch (error) {
+    console.error('Error processing swap:', error)
+    res.status(500).json({ error: 'Failed to process swap' })
+  }
+})
+
+// === 발행 통계 및 관리 ===
+
+// 총 발행량 조회
+router.get('/total-issued', authMiddleware, adminAuthMiddleware, async (req, res) => {
+  try {
+    const result = await adminIOUService.getTotalIssuedAmount()
+    res.json(result)
+
+  } catch (error) {
+    console.error('Error getting total issued amount:', error)
+    res.status(500).json({ error: 'Failed to get total issued amount' })
+  }
+})
+
+// IOU 설정 정보 조회
+router.get('/settings', authMiddleware, adminAuthMiddleware, (req, res) => {
+  try {
+    const settings = adminIOUService.getSettings()
+    res.json({
+      success: true,
+      settings: settings
+    })
+
+  } catch (error) {
+    console.error('Error getting IOU settings:', error)
+    res.status(500).json({ error: 'Failed to get IOU settings' })
+  }
+})
+
+// 수수료 계산 (어드민용)
+router.post('/calculate-fee', authMiddleware, adminAuthMiddleware, (req, res) => {
+  try {
+    const { amount } = req.body
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: 'Valid amount is required' })
+    }
+
+    const calculation = adminIOUService.calculateSwapFee(amount)
+    res.json({
+      success: true,
+      calculation: calculation
+    })
+
+  } catch (error) {
+    console.error('Error calculating fee:', error)
+    res.status(500).json({ error: 'Failed to calculate fee' })
+  }
+})
+
+// === 대량 처리 기능 ===
+
+// 대량 IOU 발행
+router.post('/batch-issue', authMiddleware, adminAuthMiddleware, async (req, res) => {
+  try {
+    const { transactions } = req.body
+
+    if (!Array.isArray(transactions) || transactions.length === 0) {
+      return res.status(400).json({ error: 'Transactions array is required' })
+    }
+
+    if (transactions.length > 100) {
+      return res.status(400).json({ error: 'Maximum 100 transactions per batch' })
+    }
+
+    const results = []
+
+    for (const tx of transactions) {
+      if (!tx.userAddress || !tx.amount) {
+        results.push({
+          userAddress: tx.userAddress,
+          success: false,
+          error: 'Missing userAddress or amount'
+        })
+        continue
+      }
+
+      const result = await adminIOUService.issueKRW(tx.userAddress, tx.amount)
+      results.push({
+        userAddress: tx.userAddress,
+        ...result
+      })
+    }
+
+    const successCount = results.filter(r => r.success).length
+    const failureCount = results.length - successCount
+
+    res.json({
+      success: true,
+      batchResults: {
+        total: results.length,
+        success: successCount,
+        failures: failureCount,
+        results: results
+      }
+    })
+
+  } catch (error) {
+    console.error('Error in batch issue:', error)
+    res.status(500).json({ error: 'Failed to process batch issue' })
+  }
+})
+
+// 대량 스왑 처리
+router.post('/batch-process-swap', authMiddleware, adminAuthMiddleware, async (req, res) => {
+  try {
+    const { swaps } = req.body
+
+    if (!Array.isArray(swaps) || swaps.length === 0) {
+      return res.status(400).json({ error: 'Swaps array is required' })
+    }
+
+    if (swaps.length > 50) {
+      return res.status(400).json({ error: 'Maximum 50 swaps per batch' })
+    }
+
+    const results = []
+
+    for (const swap of swaps) {
+      if (!swap.userAddress || !swap.swapAmount) {
+        results.push({
+          userAddress: swap.userAddress,
+          success: false,
+          error: 'Missing userAddress or swapAmount'
+        })
+        continue
+      }
+
+      const result = await adminIOUService.processSwapAndIssueKRW(
+        swap.userAddress,
+        swap.swapAmount,
+        {
+          ...swap.swapDetails,
+          batchProcessed: true,
+          processedBy: req.userId,
+          timestamp: new Date().toISOString()
+        }
+      )
+      results.push({
+        userAddress: swap.userAddress,
+        ...result
+      })
+    }
+
+    const successCount = results.filter(r => r.success).length
+    const failureCount = results.length - successCount
+
+    res.json({
+      success: true,
+      batchResults: {
+        total: results.length,
+        success: successCount,
+        failures: failureCount,
+        results: results
+      }
+    })
+
+  } catch (error) {
+    console.error('Error in batch swap processing:', error)
+    res.status(500).json({ error: 'Failed to process batch swaps' })
+  }
+})
+
+module.exports = router
