@@ -1,24 +1,29 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
-require('dotenv').config();
-const {Client, Wallet} = require('xrpl');
+import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import dotenv from 'dotenv';
+import {Client, Wallet} from 'xrpl';
+
+dotenv.config();
 
 // Domain routes
-const authRoutes = require('./domains/auth/routes/auth');
-const walletRoutes = require('./domains/wallet/routes/walletRoutes');
-const transactionRoutes = require('./domains/transaction/routes/transactionRoutes');
-const iouRoutes = require('./domains/iou/routes/iouRoutes');
-const domainRoutes = require('./domains/domain/routes/domainRoutes');
-const swapFeeRoutes = require('./domains/swap/routes/swapFeeRoutes');
-const exchangeRateRoutes = require('./domains/swap/routes/exchangeRateRoutes');
+import authRoutes from './domains/auth/routes/auth.js';
+import walletRoutes from './domains/wallet/routes/walletRoutes.js';
+import transactionRoutes from './domains/transaction/routes/transactionRoutes.js';
+import iouRoutes from './domains/iou/routes/iouRoutes.js';
+import domainRoutes from './domains/domain/routes/domainRoutes.js';
+import swapFeeRoutes from './domains/swap/routes/swapFeeRoutes.js';
+import exchangeRateRoutes from './domains/swap/routes/exchangeRateRoutes.js';
 // Domain services
-const adminSystemService = require('./domains/admin/services/adminSystemService');
-const domainService = require('./domains/domain/services/domainService');
-const exchangeRateService = require('./domains/swap/services/exchangeRateService');
-const swapRate = require('./tasks/swapRate');
+import adminSystemService from './domains/admin/services/adminSystemService.js';
+import domainService from './domains/domain/services/domainService.js';
+import exchangeRateService from './domains/swap/services/exchangeRateService.js';
+import swapRate from './tasks/swapRate.js';
+// Swagger API Docs
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpec from './shared/swagger.js';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -136,9 +141,6 @@ app.use('/api/admin/domain', domainRoutes);
 app.use('/api/admin/swap-fee', swapFeeRoutes);
 app.use('/api/admin/exchange-rate', exchangeRateRoutes);
 
-// Swagger API Docs
-const swaggerUi = require('swagger-ui-express');
-const swaggerSpec = require('./shared/swagger');
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
     customCssUrl: '/swagger-ui.css',
     customJs: '/swagger-ui-bundle.js',
