@@ -82,6 +82,8 @@ router.post('/register', async (req, res) => {
 
     // Generate XRP wallet
     const walletInfo = Wallet.generate()
+    const wallet = Wallet.fromSeed(walletInfo.seed)
+    await client.fundWallet(wallet)
 
     // Create new user with wallet
     const user = new User({
