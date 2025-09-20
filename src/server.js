@@ -50,16 +50,16 @@ mongoose.connect(MONGODB_URI)
 // KRW IOU 시스템 초기화
 async function initializeKRWSystem() {
     try {
-        console.log('Initializing KRW IOU system...');
+        // console.log('Initializing KRW IOU system...');
 
         // 1. 시스템 설정 및 관리자 계정 초기화
-        await adminSystemService.initializeSystem();
+        // await adminSystemService.initializeSystem();
 
         // 2. XRPL에 Domain 설정
-        await adminSystemService.setDomainOnXRPL('krw-iou.local');
+        // await adminSystemService.setDomainOnXRPL('krw-iou.local');
 
         // 3. 기본 환율 및 수수료 설정 초기화
-        await exchangeRateService.initializeDefaultRates();
+        // await exchangeRateService.initializeDefaultRates();
 
         console.log('KRW IOU system initialized successfully');
     } catch (error) {
