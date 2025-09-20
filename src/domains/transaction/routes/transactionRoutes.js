@@ -446,6 +446,7 @@ router.post('/offer/finish', authMiddleware, async (req, res) => {
             .sort({ createdAt: -1 }) 
             .exec();
 
+    const amount = Math.floor(transaction.price/latestRecord.rate)
     const tx = {
       TransactionType: "Payment",
       Account: userWallet.address,
@@ -453,7 +454,7 @@ router.post('/offer/finish', authMiddleware, async (req, res) => {
       Amount: {
         currency: transaction.iou,
         issuer: adminWallet.address,
-        value: Math.floor(transaction.price/latestRecord.rate).toString(),
+        value: amount.toString(),
       },
     };
 
@@ -461,6 +462,7 @@ router.post('/offer/finish', authMiddleware, async (req, res) => {
     const signed = userWallet.sign(prepared);
     const result = await client.submitAndWait(signed.tx_blob);
 
+    transaction.amount=amount;
     transaction.isSuccess=true;
     await transaction.save()
     return res.status(200).json({qrCode: uuid});
@@ -664,10 +666,32 @@ router.get('/history', authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'User not found' })
     }
 
-    const { limit = 10 } = req.query
+    const { page, size } = req.query
 
-    const result = await userIOUService.getIOUTransactionHistory(user.wallet.address, parseInt(limit))
-    res.json(result)
+    const results = await Transaction
+      .find({
+      $or: [
+        { 'senderWallet.address': user.wallet.address },
+        { 'receiverWallet.address': user.wallet.address }
+      ]
+    })
+      .sort({ createdAt: -1 })                        // 최신순 정렬
+      .skip((page - 1) * size)                    // 페이징 처리
+      .limit(parseInt(size, 10));
+    
+    const response = [];
+    results.forEach(result =>{
+      const tmp = {};
+      tmp.isSuccess = result.isSuccess;
+      tmp.isReceiver = (result.receiverWallet.address == user.wallet.address) 
+      tmp.transactionDate = result.updatedAt;
+      tmp.iou = result.iou;
+      tmp.price = result.price;
+      tmp.amount=result.amount;
+      response.push(tmp);
+    })
+
+    res.json(response)
 
   } catch (error) {
     console.error('Error getting transaction history:', error)

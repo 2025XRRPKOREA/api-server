@@ -9,6 +9,10 @@ const transactionSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
+  amount: {
+    type: Number,
+    required: true
+  },
   iou: {
     type: String,
     required: true,
