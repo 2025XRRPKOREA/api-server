@@ -27,7 +27,12 @@ app.use(helmet({
     contentSecurityPolicy: false,
     hsts: false
 }));
-app.use(cors());
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    credentials: true
+}));
 
 // Rate limiting
 const limiter = rateLimit({
