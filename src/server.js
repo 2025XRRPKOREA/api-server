@@ -100,10 +100,18 @@ async function initAdmin() {
 }
 
 // 서버 시작 전 시스템 초기화
-initializeKRWSystem();
+initializeKRWSystem().then(r =>
+    console.log('KRW IOU system initialized successfully')
+).catch(err =>
+    console.error('Failed to initialize KRW IOU system:', err)
+);
 
 // 어드민 지갑 초기화
-initAdmin();
+initAdmin().then(r =>
+    console.log('admin wallet initialized successfully')
+).catch(err =>
+    console.error('Failed to initialize admin wallet:', err)
+);
 
 // Domain routes
 app.use('/api/auth', authRoutes);
