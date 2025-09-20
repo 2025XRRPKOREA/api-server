@@ -6,6 +6,8 @@ import userTradingService from '../services/tradingService.js';
 import Transaction from '../models/Transaction.js';
 import { v4 as uuidv4 } from 'uuid';
 import { Client, Wallet } from 'xrpl';
+import ExchangeRate from '../../swap/models/ExchangeRate.js';
+
 
 const router = express.Router()
 
@@ -440,7 +442,7 @@ router.post('/offer/finish', authMiddleware, async (req, res) => {
     const userWallet = Wallet.fromSeed(user.wallet.seed);
 
     // Note: ExchangeRate import needs to be added when converting exchange models
-    const latestRecord = await ExchangeRate.findOne({ quoteCurrency: iou })
+    const latestRecord = await ExchangeRate.findOne({ quoteCurrency: transaction.iou })
             .sort({ createdAt: -1 }) 
             .exec();
 
@@ -451,7 +453,7 @@ router.post('/offer/finish', authMiddleware, async (req, res) => {
       Amount: {
         currency: transaction.iou,
         issuer: adminWallet.address,
-        value: transaction.price/latestRecord.rate,
+        value: Math.floor(transaction.price/latestRecord.rate).toString(),
       },
     };
 
