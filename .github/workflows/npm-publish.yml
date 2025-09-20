@@ -7,7 +7,6 @@ on:
 
 jobs:
   deploy:
-    group: Default
     runs-on: self-hosted
 
     steps:
