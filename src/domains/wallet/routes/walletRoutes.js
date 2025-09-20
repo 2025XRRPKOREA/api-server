@@ -4,6 +4,7 @@ const User = require('../../user/models/User')
 const userWalletService = require('../services/walletService')
 const userIOUService = require('../../iou/services/userIOUService')
 const adminDomainService = require('../../domain/services/domainService')
+const { Client, Wallet } = require('xrpl');
 
 const router = express.Router()
 
@@ -44,27 +45,30 @@ const router = express.Router()
  *         description: 서버 오류
  */
 router.get('/balance', authMiddleware, async (req, res) => {
+  const client = new Client("wss://s.devnet.rippletest.net:51233");
+  
   try {
+    await client.connect();
+
     const user = await User.findById(req.userId)
     if (!user) {
       return res.status(404).json({ error: 'User not found' })
     }
-
-    const result = await userWalletService.getXRPBalance(user.wallet.address)
-
-    if (result.success) {
-      res.json({
-        address: user.wallet.address,
-        balance: result.balance,
-        balanceXRP: (parseInt(result.balance) / 1000000).toFixed(6) // Convert drops to XRP
-      })
-    } else {
-      res.status(500).json({ error: result.error })
-    }
-
+    
+    const response = {};
+    response['address'] = user.wallet.address;
+    const xrp = await client.getXrpBalance(user.wallet.address)
+    response['XRP'] = xrp;
+    const line = await client.request({ command: "account_lines", account: user.wallet.address })
+    line.result.lines.forEach(line =>{
+      response[line['currency']] = line['balance']
+    })
+    return res.json(response)
   } catch (error) {
     console.error('Error fetching balance:', error)
-    res.status(500).json({ error: 'Failed to fetch balance' })
+    return res.status(500).json({ error: 'Failed to fetch balance' }) 
+  } finally {
+    await client.disconnect();
   }
 })
 
