@@ -5,6 +5,7 @@ const userWalletService = require('../services/walletService')
 const userIOUService = require('../../iou/services/userIOUService')
 const adminDomainService = require('../../domain/services/domainService')
 const { Client, Wallet } = require('xrpl');
+const ExchangeRate = require('../../swap/models/ExchangeRate')
 
 const router = express.Router()
 
@@ -60,9 +61,17 @@ router.get('/balance', authMiddleware, async (req, res) => {
     const xrp = await client.getXrpBalance(user.wallet.address)
     response['XRP'] = xrp;
     const line = await client.request({ command: "account_lines", account: user.wallet.address })
-    line.result.lines.forEach(line =>{
-      response[line['currency']] = line['balance']
-    })
+
+    for (let i = 0; i < line.result.lines.length; i++) {
+      const lineItem = line.result.lines[i];
+      const latestRecord = await ExchangeRate.findOne({ quoteCurrency: lineItem['currency'] })
+        .sort({ createdAt: -1 }) 
+        .exec();
+      if(latestRecord){  
+        response[lineItem['currency']] = lineItem['balance'] * latestRecord.rate;
+      }
+    }
+
     return res.json(response)
   } catch (error) {
     console.error('Error fetching balance:', error)
