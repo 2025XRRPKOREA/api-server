@@ -8,12 +8,6 @@ const options = {
       version: '1.0.0',
       description: 'XRP 지갑 관리 및 KRW IOU 거래 시스템 API 문서',
     },
-    servers: [
-      {
-        url: 'http://localhost:3000',
-        description: 'Development server',
-      },
-    ],
     components: {
       securitySchemes: {
         bearerAuth: {
