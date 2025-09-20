@@ -23,7 +23,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Security middleware
-app.use(helmet());
+app.use(helmet({
+    contentSecurityPolicy: false,
+    hsts: false
+}));
 app.use(cors());
 
 // Rate limiting
