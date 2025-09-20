@@ -94,19 +94,41 @@ router.post('/trust', authMiddleware, adminAuthMiddleware, async (req, res) => {
 })
 
 router.post('/issue', authMiddleware, adminAuthMiddleware, async (req, res) => {
-  try {
-    const { userAddress, amount } = req.body
+  const client = new Client("wss://s.devnet.rippletest.net:51233");
 
-    if (!userAddress || !amount) {
-      return res.status(400).json({ error: 'User address and amount are required' })
+  try {
+    await client.connect();
+    const { amount, userSeed, io } = req.body
+
+    if (!amount || !userSeed || !io) {
+      return res.status(400).json({ error: 'bad request' })
     }
 
-    const result = await adminIOUService.issueKRW(userAddress, amount)
-    res.json(result)
+    const admin = Wallet.fromSeed("sEdSc1R6ZckunYrdi6iG61EKmDAkBY2");
+    const user = Wallet.fromSeed(userSeed);
+
+    const tx = {
+      TransactionType: "Payment",
+      Account: admin.address,
+      Destination: user.address,
+      Amount: {
+        currency: io,
+        issuer: admin.address,
+        value: "100",
+      },
+    };
+
+    const prepared = await client.autofill(tx);
+    const signed = admin.sign(prepared);
+    const result = await client.submitAndWait(signed.tx_blob);
+
+    return res.json({success: true})
 
   } catch (error) {
     console.error('Error issuing KRW:', error)
-    res.status(500).json({ error: 'Failed to issue KRW' })
+    return res.status(500).json({ error: 'Failed to issue KRW' })
+  } finally {
+    await client.disconnect();
   }
 })
 
