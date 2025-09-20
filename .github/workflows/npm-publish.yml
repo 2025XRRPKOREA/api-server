@@ -24,8 +24,7 @@ jobs:
       - name: Stop existing PM2 process
         run: |
           pm2 delete api-server || true
-          pm2 kill || true
-          sleep 2
+          sleep 3
 
       - name: Start application with PM2
         run: pm2 start src/server.js --name "api-server"
