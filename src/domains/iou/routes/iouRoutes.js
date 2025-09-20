@@ -2,6 +2,8 @@ const express = require('express')
 const { authMiddleware } = require('../../../shared/middleware/auth')
 const adminIOUService = require('../services/iouService')
 const adminSystemService = require('../../admin/services/adminSystemService')
+const WalletService = require('../../wallet/services/legacyWalletService');
+const { Client, Wallet } = require('xrpl');
 
 const router = express.Router()
 
@@ -55,6 +57,42 @@ const adminAuthMiddleware = async (req, res, next) => {
  *       '403':
  *         description: 관리자 권한 없음
  */
+
+router.post('/trust', authMiddleware, adminAuthMiddleware, async (req, res) => {
+  const client = new Client("wss://s.devnet.rippletest.net:51233");
+  
+  try {
+    await client.connect();
+
+    const { iou, userSeed } = req.body;
+    if (!iou || !userSeed) {
+      return res.status(400).json({ error: 'bad request' })
+    }
+
+    const user = Wallet.fromSeed(userSeed);
+
+    const tx = {
+      TransactionType: "TrustSet",
+      Account: user.address,
+      LimitAmount: {
+        currency: iou,
+        issuer: 'rf359mcn9kH4Wvq625QhSLN59upejWe3E1',
+        value: "99999999",
+      }
+    };
+    const prepared = await client.autofill(tx);
+    const signed = user.sign(prepared);
+    const result = await client.submitAndWait(signed.tx_blob);
+    console.log(JSON.stringify(result, null, 2));
+    return res.status(200).json({success: true});
+  } catch (error) {
+    console.error('trust error', error)
+    return res.status(500).json({ error: 'trust error' })
+  } finally {
+    await client.disconnect();
+  }
+})
+
 router.post('/issue', authMiddleware, adminAuthMiddleware, async (req, res) => {
   try {
     const { userAddress, amount } = req.body
