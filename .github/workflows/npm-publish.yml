@@ -29,5 +29,10 @@ jobs:
 #      - name: Start application with PM2
 #        run: pm2 start src/server.js --name "api-server"
 
-      - name: Restart application with PM2
-        run: pm2 restart api-server
+      - name: Stop and start application with PM2
+        run: |
+          pm2 delete api-server || true
+          sudo fuser -k 3000/tcp || true
+          sleep 3
+          pm2 start src/server.js --name "api-server"
+          pm2 save
