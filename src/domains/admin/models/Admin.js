@@ -1,44 +1,11 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
 
-const adminSchema = new mongoose.Schema({
-  username: {
+const systemConfigSchema = new mongoose.Schema({
+  // 단 하나의 설정 문서만 존재하도록 보장하는 고유 키
+  configKey: {
     type: String,
-    required: true,
-    unique: true,
-    default: 'admin'
-  },
-  password: {
-    type: String,
-    required: true,
-    default: '123123'
-  },
-  wallet: {
-    address: {
-      type: String,
-      required: true,
-      unique: true
-    },
-    seed: {
-      type: String,
-      required: true
-    },
-    publicKey: {
-      type: String,
-      required: true
-    },
-    privateKey: {
-      type: String,
-      required: true
-    }
-  },
-  isActive: {
-    type: Boolean,
-    default: true
-  },
-  role: {
-    type: String,
-    default: 'admin'
+    default: 'main',
+    unique: true
   },
   // Permissioned Domain 설정
   domain: {
@@ -73,36 +40,16 @@ const adminSchema = new mongoose.Schema({
       type: String,
       default: "1000000" // 일일 발행 한도
     }
+  },
+  // 시스템 관리자 지갑 정보
+  adminWallet: {
+      address: String,
+      seed: String,
+      publicKey: String,
+      privateKey: String
   }
 }, {
   timestamps: true
 });
 
-// Hash password before saving
-adminSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-
-  try {
-    const salt = await bcrypt.genSalt(12);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Compare password method
-adminSchema.methods.comparePassword = async function(candidatePassword) {
-  return bcrypt.compare(candidatePassword, this.password);
-};
-
-// Remove sensitive data when converting to JSON
-adminSchema.methods.toJSON = function() {
-  const admin = this.toObject();
-  delete admin.password;
-  delete admin.wallet.seed;
-  delete admin.wallet.privateKey;
-  return admin;
-};
-
-module.exports = mongoose.model('Admin', adminSchema);
+module.exports = mongoose.model('SystemConfig', systemConfigSchema);

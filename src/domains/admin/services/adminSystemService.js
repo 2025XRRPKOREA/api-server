@@ -1,74 +1,89 @@
-const XRPLService = require('../../../shared/services/xrplService')
-const Admin = require('../models/Admin')
-const xrpl = require('xrpl')
+const XRPLService = require('../../../shared/services/xrplService');
+const SystemConfig = require('../models/Admin'); // Admin.js 파일이지만, 내부는 SystemConfig 모델
+const User = require('../../user/models/User');
+const xrpl = require('xrpl');
 
 class AdminSystemService {
 
     constructor() {
-        this.adminWallet = null
-        this.adminDbRecord = null
-        this.initialized = false
+        this.adminWallet = null;
+        this.systemConfig = null;
+        this.initialized = false;
     }
 
     /**
-     * 어드민 시스템 초기화 (admin/123123으로 고정)
+     * 시스템 초기화:
+     * 1. SystemConfig 문서가 존재하는지 확인하고 없으면 생성합니다.
+     * 2. 'admin' 역할을 가진 User가 존재하는지 확인하고 없으면 생성합니다.
+     * 3. SystemConfig에서 관리자 지갑을 로드합니다.
      */
-    async initializeAdmin() {
-        if (this.initialized && this.adminWallet) {
-            return this.adminWallet
+    async initializeSystem() {
+        if (this.initialized) {
+            return;
         }
 
-        const client = await XRPLService.connectClient()
+        const client = await XRPLService.connectClient();
 
         try {
-            // DB에서 기존 어드민 계정 확인
-            this.adminDbRecord = await Admin.findOne({ username: 'admin' })
+            // 1. 시스템 설정(SystemConfig) 초기화
+            this.systemConfig = await SystemConfig.findOne({ configKey: 'main' });
 
-            if (this.adminDbRecord) {
-                // 기존 어드민 계정이 있으면 복원
-                this.adminWallet = xrpl.Wallet.fromSeed(this.adminDbRecord.wallet.seed)
-                console.log(`Admin wallet restored from DB: ${this.adminWallet.address}`)
-
-                // 계정 잔액 확인
-                const balanceResult = await XRPLService.getXRPBalance(client, this.adminWallet.address)
-                if (balanceResult.success) {
-                    console.log(`Admin XRP balance: ${balanceResult.balance} XRP`)
-                } else {
-                    console.log('Admin account not yet funded on network')
-                }
+            if (this.systemConfig && this.systemConfig.adminWallet && this.systemConfig.adminWallet.seed) {
+                // 설정이 존재하면, 해당 지갑 복원
+                this.adminWallet = xrpl.Wallet.fromSeed(this.systemConfig.adminWallet.seed);
+                console.log(`Admin wallet restored from SystemConfig: ${this.adminWallet.address}`);
             } else {
-                // 새 어드민 계정 생성
-                console.log("Creating new admin account (admin/123123)...")
-                const fundResult = await client.fundWallet()
-                this.adminWallet = fundResult.wallet
+                // 설정 또는 지갑이 없으면, 새로 생성
+                console.log("Initializing new SystemConfig and admin wallet...");
+                const fundResult = await client.fundWallet();
+                this.adminWallet = fundResult.wallet;
+                console.log(`New admin wallet funded: ${this.adminWallet.address}`);
 
-                // DB에 어드민 계정 저장
-                this.adminDbRecord = new Admin({
-                    username: 'admin',
-                    password: '123123',
-                    wallet: {
-                        address: this.adminWallet.address,
-                        seed: this.adminWallet.seed,
-                        publicKey: this.adminWallet.publicKey,
-                        privateKey: this.adminWallet.privateKey
-                    }
-                })
+                const walletData = {
+                    address: this.adminWallet.address,
+                    seed: this.adminWallet.seed,
+                    publicKey: this.adminWallet.publicKey,
+                    privateKey: this.adminWallet.privateKey
+                };
 
-                await this.adminDbRecord.save()
-                console.log(`New admin created: ${this.adminWallet.address}`)
-                console.log(`Admin credentials: admin/123123`)
+                // findOneAndUpdate와 upsert 옵션으로 단일 설정 문서를 생성하거나 업데이트
+                this.systemConfig = await SystemConfig.findOneAndUpdate(
+                    { configKey: 'main' },
+                    { $set: { adminWallet: walletData } },
+                    { new: true, upsert: true }
+                );
+                console.log("SystemConfig document created/updated.");
             }
 
-            this.initialized = true
+            // 2. 관리자 유저(Admin User) 초기화
+            let adminUser = await User.findOne({ role: 'admin' });
+            if (!adminUser) {
+                console.log("Creating new admin user (admin/123123)...");
+                adminUser = new User({
+                    email: 'admin', // 로그인 ID로 'admin' 사용
+                    password: '123123',
+                    role: 'admin',
+                    // User 스키마에 wallet 필드가 필수이므로, 시스템 지갑 주소를 넣어줌
+                    wallet: {
+                        address: this.adminWallet.address,
+                        seed: 's***************************', // 보안상 저장 안함
+                        publicKey: this.adminWallet.publicKey,
+                        privateKey: 'p***************************' // 보안상 저장 안함
+                    }
+                });
+                await adminUser.save();
+                console.log("Admin user created successfully in Users collection.");
+            }
+
+            this.initialized = true;
+            console.log("System initialized successfully.");
 
         } catch (error) {
-            console.error('Error initializing admin:', error)
-            throw error
+            console.error('Error initializing system:', error);
+            throw error;
         } finally {
-            await client.disconnect()
+            await client.disconnect();
         }
-
-        return this.adminWallet
     }
 
     /**
@@ -76,111 +91,67 @@ class AdminSystemService {
      */
     async setDomainOnXRPL(domainName = 'krw-iou.local') {
         if (!this.adminWallet) {
-            throw new Error('Admin not initialized')
+            throw new Error('System not initialized');
         }
 
-        const client = await XRPLService.connectClient()
+        const client = await XRPLService.connectClient();
 
         try {
-            // Domain을 hex로 변환
-            const domainHex = Buffer.from(domainName, 'ascii').toString('hex').toUpperCase()
+            const domainHex = Buffer.from(domainName, 'ascii').toString('hex').toUpperCase();
 
             const domainTx = {
                 TransactionType: "AccountSet",
                 Account: this.adminWallet.address,
                 Domain: domainHex,
-                // RequireAuth 플래그 설정 (Trust Line 승인 필요)
                 SetFlag: 2, // asfRequireAuth
-            }
+            };
 
-            const result = await XRPLService.submitAndWait(client, this.adminWallet, domainTx)
+            const result = await XRPLService.submitAndWait(client, this.adminWallet, domainTx);
 
             if (result.success) {
-                console.log('Domain set on XRPL successfully')
-
-                // DB에 domain 설정 업데이트
-                if (this.adminDbRecord) {
-                    this.adminDbRecord.domain.name = domainName
-                    this.adminDbRecord.domain.verified = true
-                    await this.adminDbRecord.save()
-                }
-
-                return { success: true, txHash: result.txHash }
+                console.log('Domain set on XRPL successfully');
+                // SystemConfig에 도메인 정보 업데이트
+                this.systemConfig.domain.name = domainName;
+                this.systemConfig.domain.verified = true;
+                await this.systemConfig.save();
+                return { success: true, txHash: result.txHash };
             } else {
-                throw new Error(`Domain setting failed: ${result.error}`)
+                throw new Error(`Domain setting failed: ${result.error}`);
             }
         } catch (error) {
-            console.error('Error setting domain on XRPL:', error)
-            return { success: false, error: error.message }
+            console.error('Error setting domain on XRPL:', error);
+            return { success: false, error: error.message };
         } finally {
-            await client.disconnect()
+            await client.disconnect();
         }
     }
 
-    /**
-     * 어드민 지갑 정보 반환
-     */
     getAdminWallet() {
-        return this.adminWallet
+        return this.adminWallet;
     }
 
-    /**
-     * 어드민 DB 레코드 반환
-     */
-    getAdminDbRecord() {
-        return this.adminDbRecord
-    }
-
-    /**
-     * 어드민 주소 반환
-     */
     getAdminAddress() {
-        return this.adminWallet ? this.adminWallet.address : null
+        return this.adminWallet ? this.adminWallet.address : null;
     }
-
-    /**
-     * 시스템 상태 조회
-     */
-    async getSystemStatus() {
-        const status = {
-            adminInitialized: this.initialized,
-            adminAddress: this.getAdminAddress(),
-            networkInfo: XRPLService.getNetworkInfo(),
-            timestamp: new Date().toISOString()
-        }
-
-        if (this.adminWallet) {
-            const client = await XRPLService.connectClient()
-            try {
-                const balanceResult = await XRPLService.getXRPBalance(client, this.adminWallet.address)
-                status.adminBalance = balanceResult.success ? balanceResult.balance : 'Unknown'
-
-                const accountResult = await XRPLService.getAccountInfo(client, this.adminWallet.address)
-                status.adminAccountInfo = accountResult.success ? accountResult.accountInfo : null
-            } catch (error) {
-                status.error = error.message
-            } finally {
-                await client.disconnect()
-            }
-        }
-
-        return status
+    
+    getSystemConfig() {
+        return this.systemConfig;
     }
 
     /**
      * 어드민 권한 확인
      */
     async verifyAdminPermissions(userId) {
+        if (!userId) return false;
         try {
-            const admin = await Admin.findById(userId)
-            return admin && admin.role === 'admin'
+            const user = await User.findById(userId);
+            return user && user.role === 'admin';
         } catch (error) {
-            return false
+            console.error("Error verifying admin permissions:", error);
+            return false;
         }
     }
 }
 
-// 싱글톤 인스턴스
-const adminSystemService = new AdminSystemService()
-
-module.exports = adminSystemService
+const adminSystemService = new AdminSystemService();
+module.exports = adminSystemService;

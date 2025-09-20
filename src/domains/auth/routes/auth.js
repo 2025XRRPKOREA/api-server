@@ -173,7 +173,7 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    // Find user
+    // Find user by email (works for both 'admin' and regular users)
     const user = await User.findOne({ email, isActive: true });
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
@@ -185,9 +185,14 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Generate JWT token
+    // Generate JWT token with role
+    const payload = {
+      userId: user._id,
+      email: user.email,
+      role: user.role
+    };
     const token = jwt.sign(
-      { userId: user._id, email: user.email },
+      payload,
       process.env.JWT_SECRET || 'default-secret',
       { expiresIn: '7d' }
     );
@@ -198,6 +203,7 @@ router.post('/login', async (req, res) => {
       user: {
         id: user._id,
         email: user.email,
+        role: user.role,
         wallet: {
           address: user.wallet.address,
           publicKey: user.wallet.publicKey

@@ -48,16 +48,13 @@ async function initializeKRWSystem() {
   try {
     console.log('Initializing KRW IOU system...');
 
-    // 1. 어드민 계정 초기화
-    await adminSystemService.initializeAdmin();
+    // 1. 시스템 설정 및 관리자 계정 초기화
+    await adminSystemService.initializeSystem();
 
-    // 2. Permissioned Domain 초기화
-    await domainService.initializeDomain('krw-iou.local');
-
-    // 3. XRPL에 Domain 설정
+    // 2. XRPL에 Domain 설정
     await adminSystemService.setDomainOnXRPL('krw-iou.local');
 
-    // 4. 기본 환율 및 수수료 설정 초기화
+    // 3. 기본 환율 및 수수료 설정 초기화
     await exchangeRateService.initializeDefaultRates();
 
     console.log('KRW IOU system initialized successfully');
