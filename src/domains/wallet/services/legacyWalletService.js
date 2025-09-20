@@ -10,7 +10,7 @@ class WalletService {
    * Initialize XRPL client connection
    * @param {string} server - XRPL server URL
    */
-  async initializeClient(server = process.env.XRPL_SERVER || 'wss://s.altnet.rippletest.net:51233') {
+  async initializeClient(server = 'wss://s.devnet.rippletest.net:51233') {
     try {
       if (!this.client || !this.client.isConnected()) {
         this.client = new Client(server);
