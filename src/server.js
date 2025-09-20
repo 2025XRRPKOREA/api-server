@@ -55,7 +55,7 @@ mongoose.connect(MONGODB_URI)
 // KRW IOU 시스템 초기화
 async function initializeKRWSystem() {
     try {
-        // console.log('Initializing KRW IOU system...');
+        console.log('Initializing KRW IOU system...');
 
         // 1. 시스템 설정 및 관리자 계정 초기화
         await adminSystemService.initializeSystem();
@@ -103,14 +103,29 @@ async function initAdmin() {
         console.log('finish init admin');
     }
 }
+async function startServer() {
+    try {
+        // 서버 시작 전 시스템 초기화
+        await initializeKRWSystem();
+        // 어드민 지갑 초기화
+        await initAdmin();
 
-(async () => {
-    // 서버 시작 전 시스템 초기화
-    await initializeKRWSystem();
-    // 어드민 지갑 초기화
-    await initAdmin();
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-})();
+        // 서버 시작
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+        });
+
+        // 1분마다 실행 (60,000ms)
+        setInterval(async () => {
+            await swapRate.fetchRate("XRP");
+        }, 10000);
+
+    } catch (error) {
+        console.error('Failed to start server:', error);
+        process.exit(1); // 초기화 실패 시 프로세스 종료 → PM2가 재시작
+    }
+}
+
 
 // Domain routes
 app.use('/api/auth', authRoutes);
@@ -154,7 +169,6 @@ app.use('*', (req, res) => {
     res.status(404).json({error: 'Route not found'});
 });
 
-// 1분마다 실행 (60,000ms)
-setInterval(async () => {
-    await swapRate.fetchRate("XRP");
-}, 10000);
+
+
+startServer();
