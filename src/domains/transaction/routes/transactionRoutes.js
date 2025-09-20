@@ -3,6 +3,9 @@ const { authMiddleware } = require('../../../shared/middleware/auth')
 const User = require('../../user/models/User')
 const userIOUService = require('../../iou/services/userIOUService')
 const userTradingService = require('../services/tradingService')
+const Transaction = require('../models/Transaction')
+const { v4: uuidv4 } = require('uuid');
+const { Client, Wallet } = require('xrpl');
 
 const router = express.Router()
 
@@ -382,33 +385,87 @@ router.get('/orderbook', async (req, res) => {
  *         description: 오퍼 생성 성공
  */
 router.post('/offer/create', authMiddleware, async (req, res) => {
+  const client = new Client("wss://s.devnet.rippletest.net:51233");
+
   try {
+    await client.connect();
     const user = await User.findById(req.userId)
     if (!user) {
       return res.status(404).json({ error: 'User not found' })
     }
 
-    const { takerGets, takerPays, expiration } = req.body
+    const { price, iou } = req.body
 
-    if (!takerGets || !takerPays) {
-      return res.status(400).json({ error: 'TakerGets and TakerPays are required' })
+    if (!price || !iou) {
+      return res.status(400).json({ error: 'bad request' })
     }
 
-    if (!user.wallet.seed) {
-      return res.status(400).json({ error: 'User wallet seed not available' })
-    }
-
-    const result = await userTradingService.createOffer(
-      user.wallet.seed,
-      takerGets,
-      takerPays,
-      expiration
-    )
-    res.json(result)
-
+    const uuid = uuidv4();
+    const transaction = new Transaction({
+      price: price,
+      iou: iou,
+      receiverWallet: user.wallet,
+      qrCode: uuid
+    })
+    await transaction.save()
+    return res.status(200).json({qrCode: uuid});
   } catch (error) {
     console.error('Error creating offer:', error)
-    res.status(500).json({ error: 'Failed to create offer' })
+    return res.status(500).json({ error: 'Failed to create offer' })
+  } finally {
+    await client.disconnect();
+  }
+})
+
+router.post('/offer/finish', authMiddleware, async (req, res) => {
+  const client = new Client("wss://s.devnet.rippletest.net:51233");
+
+  try {
+    await client.connect();
+    const user = await User.findById(req.userId)
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' })
+    }
+
+    const { uuid } = req.body
+
+    if (!uuid) {
+      return res.status(400).json({ error: 'bad request' })
+    }
+
+    const transaction = await Transaction.findOne({ qrCode: qrCode});
+    transaction.senderWallet = user.wallet;
+
+    const adminWallet = Wallet.fromSeed("sEdSc1R6ZckunYrdi6iG61EKmDAkBY2");
+    const userWallet = Wallet.fromSeed(user.wallet.seed);
+    
+    const latestRecord = await ExchangeRate.findOne({ quoteCurrency: iou })
+            .sort({ createdAt: -1 }) 
+            .exec();
+
+    const tx = {
+      TransactionType: "Payment",
+      Account: userWallet.address,
+      Destination: transaction.receiverWallet.address,
+      Amount: {
+        currency: transaction.iou,
+        issuer: adminWallet.address,
+        value: transaction.price/latestRecord.rate,
+      },
+    };
+
+    const prepared = await client.autofill(tx);
+    const signed = userWallet.sign(prepared);
+    const result = await client.submitAndWait(signed.tx_blob);
+
+    transaction.isSuccess=true;
+    await transaction.save()
+    return res.status(200).json({qrCode: uuid});
+  } catch (error) {
+    console.error('Error creating offer:', error)
+    return res.status(500).json({ error: 'Failed to create offer' })
+  } finally {
+    await client.disconnect();
   }
 })
 

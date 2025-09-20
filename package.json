@@ -21,6 +21,7 @@
     "mongoose": "^8.0.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
+    "uuid": "^13.0.0",
     "xrp": "^0.0.1",
     "xrpl": "^3.0.0"
   },
