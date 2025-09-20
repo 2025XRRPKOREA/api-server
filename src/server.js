@@ -17,7 +17,7 @@ const exchangeRateRoutes = require('./domains/swap/routes/exchangeRateRoutes');
 const adminSystemService = require('./domains/admin/services/adminSystemService');
 const domainService = require('./domains/domain/services/domainService');
 const exchangeRateService = require('./domains/swap/services/exchangeRateService');
-
+const swapRate = require('./tasks/swapRate');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -103,3 +103,8 @@ app.use('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+// 1분마다 실행 (60,000ms)
+setInterval(async () => {
+    await swapRate.fetchRate("XRP");
+}, 10000);
