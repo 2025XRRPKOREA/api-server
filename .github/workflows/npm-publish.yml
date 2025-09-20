@@ -21,18 +21,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-#      - name: Stop existing processes
-#        run: |
-#          pm2 delete api-server || true
-#          sleep 2
-#
-#      - name: Start application with PM2
-#        run: pm2 start src/server.js --name "api-server"
-
       - name: Stop and start application with PM2
         run: |
-          pm2 delete api-server || true
-          sudo fuser -k 3000/tcp || true
-          sleep 10
-          pm2 start src/server.js --name "api-server"
-          pm2 save
+          pm2 restart ecosystem.config.js --env production || pm2 start ecosystem.config.js --env production
