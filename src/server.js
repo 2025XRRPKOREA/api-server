@@ -58,13 +58,13 @@ async function initializeKRWSystem() {
         // console.log('Initializing KRW IOU system...');
 
         // 1. 시스템 설정 및 관리자 계정 초기화
-        // await adminSystemService.initializeSystem();
+        await adminSystemService.initializeSystem();
 
         // 2. XRPL에 Domain 설정
-        // await adminSystemService.setDomainOnXRPL('krw-iou.local');
+        await adminSystemService.setDomainOnXRPL('krw-iou.local');
 
         // 3. 기본 환율 및 수수료 설정 초기화
-        // await exchangeRateService.initializeDefaultRates();
+        await exchangeRateService.initializeDefaultRates();
 
         console.log('KRW IOU system initialized successfully');
     } catch (error) {
@@ -104,19 +104,13 @@ async function initAdmin() {
     }
 }
 
-// 서버 시작 전 시스템 초기화
-initializeKRWSystem().then(r =>
-    console.log('KRW IOU system initialized successfully')
-).catch(err =>
-    console.error('Failed to initialize KRW IOU system:', err)
-);
-
-// 어드민 지갑 초기화
-initAdmin().then(r =>
-    console.log('admin wallet initialized successfully')
-).catch(err =>
-    console.error('Failed to initialize admin wallet:', err)
-);
+(async () => {
+    // 서버 시작 전 시스템 초기화
+    await initializeKRWSystem();
+    // 어드민 지갑 초기화
+    await initAdmin();
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+})();
 
 // Domain routes
 app.use('/api/auth', authRoutes);
@@ -158,10 +152,6 @@ app.use((err, req, res, next) => {
 // 404 handler
 app.use('*', (req, res) => {
     res.status(404).json({error: 'Route not found'});
-});
-
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
 });
 
 // 1분마다 실행 (60,000ms)
