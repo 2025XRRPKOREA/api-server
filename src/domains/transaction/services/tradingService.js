@@ -1,6 +1,6 @@
-const XRPLService = require('../shared/xrplService')
-const ValidationService = require('../shared/validationService')
-const adminSystemService = require('../admin/adminSystemService')
+const XRPLService = require('../../../shared/services/xrplService')
+const ValidationService = require('../../../shared/services/validationService')
+const adminSystemService = require('../../admin/services/adminSystemService')
 const xrpl = require('xrpl')
 
 // KRW IOU 설정

@@ -7,9 +7,42 @@ const adminDomainService = require('../../domain/services/domainService')
 
 const router = express.Router()
 
+/**
+ * @swagger
+ * tags:
+ *   name: Wallet
+ *   description: 지갑 관리 (XRP 및 IOU)
+ */
+
 // === 기본 지갑 기능 ===
 
-// XRP 잔액 조회
+/**
+ * @swagger
+ * /api/wallet/balance:
+ *   get:
+ *     summary: XRP 잔액 조회
+ *     tags: [Wallet]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: 성공적으로 XRP 잔액을 조회함
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 address: 
+ *                   type: string
+ *                 balance: 
+ *                   type: string
+ *                 balanceXRP:
+ *                   type: string
+ *       '404':
+ *         description: 사용자를 찾을 수 없음
+ *       '500':
+ *         description: 서버 오류
+ */
 router.get('/balance', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
@@ -35,7 +68,22 @@ router.get('/balance', authMiddleware, async (req, res) => {
   }
 })
 
-// 계정 정보 조회
+/**
+ * @swagger
+ * /api/wallet/account:
+ *   get:
+ *     summary: XRP 계정 정보 조회
+ *     tags: [Wallet]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: 성공적으로 계정 정보를 조회함
+ *       '404':
+ *         description: 사용자를 찾을 수 없음
+ *       '500':
+ *         description: 서버 오류
+ */
 router.get('/account', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
@@ -69,7 +117,28 @@ router.get('/account', authMiddleware, async (req, res) => {
   }
 })
 
-// XRP 주소 유효성 검증
+/**
+ * @swagger
+ * /api/wallet/validate-address:
+ *   post:
+ *     summary: XRP 주소 유효성 검증
+ *     tags: [Wallet]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               address:
+ *                 type: string
+ *                 description: 검증할 XRP 주소
+ *     responses:
+ *       '200':
+ *         description: 유효성 검증 결과
+ *       '400':
+ *         description: 주소 누락
+ */
 router.post('/validate-address', (req, res) => {
   try {
     const { address } = req.body
@@ -89,7 +158,32 @@ router.post('/validate-address', (req, res) => {
 
 // === KRW IOU 기능 ===
 
-// KRW Trust Line 생성
+/**
+ * @swagger
+ * /api/wallet/krw/create-trustline:
+ *   post:
+ *     summary: KRW IOU Trust Line 생성
+ *     tags: [Wallet]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               limitAmount:
+ *                 type: string
+ *                 description: 설정할 Trust Line 한도 (기본값 1,000,000)
+ *                 default: "1000000"
+ *     responses:
+ *       '200':
+ *         description: Trust Line 생성 성공 또는 이미 존재함
+ *       '400':
+ *         description: 지갑 시드 없음
+ *       '404':
+ *         description: 사용자를 찾을 수 없음
+ */
 router.post('/krw/create-trustline', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
@@ -119,7 +213,20 @@ router.post('/krw/create-trustline', authMiddleware, async (req, res) => {
   }
 })
 
-// KRW 잔액 조회
+/**
+ * @swagger
+ * /api/wallet/krw/balance:
+ *   get:
+ *     summary: KRW IOU 잔액 조회
+ *     tags: [Wallet]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: 성공적으로 KRW IOU 잔액을 조회함
+ *       '404':
+ *         description: 사용자를 찾을 수 없음
+ */
 router.get('/krw/balance', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
@@ -136,7 +243,20 @@ router.get('/krw/balance', authMiddleware, async (req, res) => {
   }
 })
 
-// 모든 Trust Line 조회
+/**
+ * @swagger
+ * /api/wallet/trustlines:
+ *   get:
+ *     summary: 모든 Trust Line 조회
+ *     tags: [Wallet]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: 성공적으로 모든 Trust Line을 조회함
+ *       '404':
+ *         description: 사용자를 찾을 수 없음
+ */
 router.get('/trustlines', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
@@ -153,7 +273,20 @@ router.get('/trustlines', authMiddleware, async (req, res) => {
   }
 })
 
-// 지갑 요약 정보
+/**
+ * @swagger
+ * /api/wallet/summary:
+ *   get:
+ *     summary: 지갑 요약 정보 조회 (XRP 및 IOU 잔액 포함)
+ *     tags: [Wallet]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: 성공적으로 지갑 요약 정보를 조회함
+ *       '404':
+ *         description: 사용자를 찾을 수 없음
+ */
 router.get('/summary', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
@@ -170,7 +303,20 @@ router.get('/summary', authMiddleware, async (req, res) => {
   }
 })
 
-// Trust Line 권한 확인
+/**
+ * @swagger
+ * /api/wallet/krw/check-permission:
+ *   get:
+ *     summary: KRW IOU Trust Line 권한 확인
+ *     tags: [Wallet]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: 성공적으로 권한 상태를 조회함
+ *       '404':
+ *         description: 사용자를 찾을 수 없음
+ */
 router.get('/krw/check-permission', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
@@ -187,7 +333,20 @@ router.get('/krw/check-permission', authMiddleware, async (req, res) => {
   }
 })
 
-// IOU 거래 가능 여부 확인
+/**
+ * @swagger
+ * /api/wallet/krw/can-trade:
+ *   get:
+ *     summary: KRW IOU 거래 가능 여부 확인
+ *     tags: [Wallet]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: 성공적으로 거래 가능 여부를 조회함
+ *       '404':
+ *         description: 사용자를 찾을 수 없음
+ */
 router.get('/krw/can-trade', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.userId)

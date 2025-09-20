@@ -5,6 +5,13 @@ const adminSystemService = require('../../admin/services/adminSystemService')
 
 const router = express.Router()
 
+/**
+ * @swagger
+ * tags:
+ *   name: Admin-Domain
+ *   description: Permissioned Domain 관리 (관리자 전용)
+ */
+
 // 어드민 권한 확인 미들웨어
 const adminAuthMiddleware = async (req, res, next) => {
   try {
@@ -20,7 +27,19 @@ const adminAuthMiddleware = async (req, res, next) => {
 
 // === Domain 설정 관리 ===
 
-// Domain 설정 조회
+/**
+ * @swagger
+ * /api/admin/domain/settings:
+ *   get:
+ *     summary: Domain 설정 조회
+ *     tags: [Admin-Domain]
+ *     security: [ { bearerAuth: [] } ]
+ *     responses:
+ *       '200':
+ *         description: Domain 설정 조회 성공
+ *       '403':
+ *         description: 관리자 권한 없음
+ */
 router.get('/settings', authMiddleware, adminAuthMiddleware, async (req, res) => {
   try {
     const result = await adminDomainService.getDomainSettings()
@@ -32,7 +51,28 @@ router.get('/settings', authMiddleware, adminAuthMiddleware, async (req, res) =>
   }
 })
 
-// Domain 설정 업데이트
+/**
+ * @swagger
+ * /api/admin/domain/settings:
+ *   put:
+ *     summary: Domain 설정 업데이트
+ *     tags: [Admin-Domain]
+ *     security: [ { bearerAuth: [] } ]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               autoWhitelist: { type: boolean }
+ *               domainType: { type: string, enum: ['whitelist', 'blacklist', 'open'] }
+ *     responses:
+ *       '200':
+ *         description: Domain 설정 업데이트 성공
+ *       '403':
+ *         description: 관리자 권한 없음
+ */
 router.put('/settings', authMiddleware, adminAuthMiddleware, async (req, res) => {
   try {
     const settings = req.body
@@ -48,7 +88,29 @@ router.put('/settings', authMiddleware, adminAuthMiddleware, async (req, res) =>
 
 // === 화이트리스트 관리 ===
 
-// 화이트리스트에 사용자 추가
+/**
+ * @swagger
+ * /api/admin/domain/whitelist/add:
+ *   post:
+ *     summary: 화이트리스트에 사용자 추가
+ *     tags: [Admin-Domain]
+ *     security: [ { bearerAuth: [] } ]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [userAddress]
+ *             properties:
+ *               userAddress: { type: string }
+ *               email: { type: string }
+ *     responses:
+ *       '200':
+ *         description: 화이트리스트 추가 성공
+ *       '403':
+ *         description: 관리자 권한 없음
+ */
 router.post('/whitelist/add', authMiddleware, adminAuthMiddleware, async (req, res) => {
   try {
     const { userAddress, email } = req.body
@@ -70,7 +132,22 @@ router.post('/whitelist/add', authMiddleware, adminAuthMiddleware, async (req, r
   }
 })
 
-// 허용된 계정 목록 조회
+/**
+ * @swagger
+ * /api/admin/domain/whitelist:
+ *   get:
+ *     summary: 화이트리스트 목록 조회
+ *     tags: [Admin-Domain]
+ *     security: [ { bearerAuth: [] } ]
+ *     parameters:
+ *       - { in: query, name: page, schema: { type: integer, default: 1 } }
+ *       - { in: query, name: limit, schema: { type: integer, default: 20 } }
+ *     responses:
+ *       '200':
+ *         description: 화이트리스트 조회 성공
+ *       '403':
+ *         description: 관리자 권한 없음
+ */
 router.get('/whitelist', authMiddleware, adminAuthMiddleware, async (req, res) => {
   try {
     const { page = 1, limit = 20 } = req.query
@@ -89,7 +166,29 @@ router.get('/whitelist', authMiddleware, adminAuthMiddleware, async (req, res) =
 
 // === 블랙리스트 관리 ===
 
-// 블랙리스트에 사용자 추가
+/**
+ * @swagger
+ * /api/admin/domain/blacklist/add:
+ *   post:
+ *     summary: 블랙리스트에 사용자 추가
+ *     tags: [Admin-Domain]
+ *     security: [ { bearerAuth: [] } ]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [userAddress]
+ *             properties:
+ *               userAddress: { type: string }
+ *               reason: { type: string }
+ *     responses:
+ *       '200':
+ *         description: 블랙리스트 추가 성공
+ *       '403':
+ *         description: 관리자 권한 없음
+ */
 router.post('/blacklist/add', authMiddleware, adminAuthMiddleware, async (req, res) => {
   try {
     const { userAddress, reason } = req.body
@@ -111,7 +210,22 @@ router.post('/blacklist/add', authMiddleware, adminAuthMiddleware, async (req, r
   }
 })
 
-// 차단된 계정 목록 조회
+/**
+ * @swagger
+ * /api/admin/domain/blacklist:
+ *   get:
+ *     summary: 블랙리스트 목록 조회
+ *     tags: [Admin-Domain]
+ *     security: [ { bearerAuth: [] } ]
+ *     parameters:
+ *       - { in: query, name: page, schema: { type: integer, default: 1 } }
+ *       - { in: query, name: limit, schema: { type: integer, default: 20 } }
+ *     responses:
+ *       '200':
+ *         description: 블랙리스트 조회 성공
+ *       '403':
+ *         description: 관리자 권한 없음
+ */
 router.get('/blacklist', authMiddleware, adminAuthMiddleware, async (req, res) => {
   try {
     const { page = 1, limit = 20 } = req.query
@@ -130,7 +244,29 @@ router.get('/blacklist', authMiddleware, adminAuthMiddleware, async (req, res) =
 
 // === KYC 관리 ===
 
-// KYC 상태 업데이트
+/**
+ * @swagger
+ * /api/admin/domain/kyc/update:
+ *   post:
+ *     summary: 사용자의 KYC 상태 업데이트
+ *     tags: [Admin-Domain]
+ *     security: [ { bearerAuth: [] } ]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [userAddress, status]
+ *             properties:
+ *               userAddress: { type: string }
+ *               status: { type: string, enum: ['pending', 'verified', 'rejected'] }
+ *     responses:
+ *       '200':
+ *         description: KYC 상태 업데이트 성공
+ *       '403':
+ *         description: 관리자 권한 없음
+ */
 router.post('/kyc/update', authMiddleware, adminAuthMiddleware, async (req, res) => {
   try {
     const { userAddress, status } = req.body
@@ -154,7 +290,28 @@ router.post('/kyc/update', authMiddleware, adminAuthMiddleware, async (req, res)
 
 // === 권한 확인 ===
 
-// Trust Line 권한 확인
+/**
+ * @swagger
+ * /api/admin/domain/check-permission:
+ *   post:
+ *     summary: 특정 사용자의 Trust Line 권한 확인
+ *     tags: [Admin-Domain]
+ *     security: [ { bearerAuth: [] } ]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [userAddress]
+ *             properties:
+ *               userAddress: { type: string }
+ *     responses:
+ *       '200':
+ *         description: 권한 확인 성공
+ *       '403':
+ *         description: 관리자 권한 없음
+ */
 router.post('/check-permission', authMiddleware, adminAuthMiddleware, async (req, res) => {
   try {
     const { userAddress } = req.body
@@ -177,7 +334,33 @@ router.post('/check-permission', authMiddleware, adminAuthMiddleware, async (req
 
 // === 대량 관리 기능 ===
 
-// 대량 화이트리스트 추가
+/**
+ * @swagger
+ * /api/admin/domain/whitelist/batch-add:
+ *   post:
+ *     summary: 대량 화이트리스트 추가
+ *     tags: [Admin-Domain]
+ *     security: [ { bearerAuth: [] } ]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               users:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     userAddress: { type: string }
+ *                     email: { type: string }
+ *     responses:
+ *       '200':
+ *         description: 대량 처리 결과
+ *       '403':
+ *         description: 관리자 권한 없음
+ */
 router.post('/whitelist/batch-add', authMiddleware, adminAuthMiddleware, async (req, res) => {
   try {
     const { users } = req.body
@@ -232,7 +415,33 @@ router.post('/whitelist/batch-add', authMiddleware, adminAuthMiddleware, async (
   }
 })
 
-// 대량 KYC 상태 업데이트
+/**
+ * @swagger
+ * /api/admin/domain/kyc/batch-update:
+ *   post:
+ *     summary: 대량 KYC 상태 업데이트
+ *     tags: [Admin-Domain]
+ *     security: [ { bearerAuth: [] } ]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               updates:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     userAddress: { type: string }
+ *                     status: { type: string, enum: ['pending', 'verified', 'rejected'] }
+ *     responses:
+ *       '200':
+ *         description: 대량 처리 결과
+ *       '403':
+ *         description: 관리자 권한 없음
+ */
 router.post('/kyc/batch-update', authMiddleware, adminAuthMiddleware, async (req, res) => {
   try {
     const { updates } = req.body
@@ -294,7 +503,19 @@ router.post('/kyc/batch-update', authMiddleware, adminAuthMiddleware, async (req
 
 // === Domain 통계 ===
 
-// Domain 통계 정보
+/**
+ * @swagger
+ * /api/admin/domain/stats:
+ *   get:
+ *     summary: Domain 통계 정보 조회
+ *     tags: [Admin-Domain]
+ *     security: [ { bearerAuth: [] } ]
+ *     responses:
+ *       '200':
+ *         description: 통계 조회 성공
+ *       '403':
+ *         description: 관리자 권한 없음
+ */
 router.get('/stats', authMiddleware, adminAuthMiddleware, async (req, res) => {
   try {
     const [domainSettings, allowedAccounts, blockedAccounts] = await Promise.all([

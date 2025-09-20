@@ -5,6 +5,13 @@ const adminSystemService = require('../../admin/services/adminSystemService')
 
 const router = express.Router()
 
+/**
+ * @swagger
+ * tags:
+ *   name: Admin-IOU
+ *   description: IOU 발행 및 관리 (관리자 전용)
+ */
+
 // 어드민 권한 확인 미들웨어
 const adminAuthMiddleware = async (req, res, next) => {
   try {
@@ -20,7 +27,34 @@ const adminAuthMiddleware = async (req, res, next) => {
 
 // === IOU 발행 관리 ===
 
-// KRW IOU 직접 발행
+/**
+ * @swagger
+ * /api/admin/iou/issue:
+ *   post:
+ *     summary: KRW IOU 직접 발행
+ *     tags: [Admin-IOU]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [userAddress, amount]
+ *             properties:
+ *               userAddress:
+ *                 type: string
+ *                 description: IOU를 받을 사용자 주소
+ *               amount:
+ *                 type: number
+ *                 description: 발행할 IOU 수량
+ *     responses:
+ *       '200':
+ *         description: IOU 발행 성공
+ *       '403':
+ *         description: 관리자 권한 없음
+ */
 router.post('/issue', authMiddleware, adminAuthMiddleware, async (req, res) => {
   try {
     const { userAddress, amount } = req.body
@@ -38,7 +72,34 @@ router.post('/issue', authMiddleware, adminAuthMiddleware, async (req, res) => {
   }
 })
 
-// 외부 스왑 처리
+/**
+ * @swagger
+ * /api/admin/iou/process-swap:
+ *   post:
+ *     summary: 외부 스왑 처리 후 IOU 발행
+ *     tags: [Admin-IOU]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [userAddress, swapAmount]
+ *             properties:
+ *               userAddress:
+ *                 type: string
+ *               swapAmount:
+ *                 type: number
+ *               swapDetails:
+ *                 type: object
+ *     responses:
+ *       '200':
+ *         description: 스왑 처리 및 IOU 발행 성공
+ *       '403':
+ *         description: 관리자 권한 없음
+ */
 router.post('/process-swap', authMiddleware, adminAuthMiddleware, async (req, res) => {
   try {
     const { userAddress, swapAmount, swapDetails = {} } = req.body
@@ -66,7 +127,20 @@ router.post('/process-swap', authMiddleware, adminAuthMiddleware, async (req, re
 
 // === 발행 통계 및 관리 ===
 
-// 총 발행량 조회
+/**
+ * @swagger
+ * /api/admin/iou/total-issued:
+ *   get:
+ *     summary: 총 발행된 IOU 수량 조회
+ *     tags: [Admin-IOU]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: 총 발행량 조회 성공
+ *       '403':
+ *         description: 관리자 권한 없음
+ */
 router.get('/total-issued', authMiddleware, adminAuthMiddleware, async (req, res) => {
   try {
     const result = await adminIOUService.getTotalIssuedAmount()
@@ -78,7 +152,20 @@ router.get('/total-issued', authMiddleware, adminAuthMiddleware, async (req, res
   }
 })
 
-// IOU 설정 정보 조회
+/**
+ * @swagger
+ * /api/admin/iou/settings:
+ *   get:
+ *     summary: IOU 설정 정보 조회
+ *     tags: [Admin-IOU]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: 설정 정보 조회 성공
+ *       '403':
+ *         description: 관리자 권한 없음
+ */
 router.get('/settings', authMiddleware, adminAuthMiddleware, (req, res) => {
   try {
     const settings = adminIOUService.getSettings()
@@ -93,7 +180,30 @@ router.get('/settings', authMiddleware, adminAuthMiddleware, (req, res) => {
   }
 })
 
-// 수수료 계산 (어드민용)
+/**
+ * @swagger
+ * /api/admin/iou/calculate-fee:
+ *   post:
+ *     summary: 수수료 계산 (관리자용)
+ *     tags: [Admin-IOU]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [amount]
+ *             properties:
+ *               amount:
+ *                 type: number
+ *     responses:
+ *       '200':
+ *         description: 수수료 계산 성공
+ *       '403':
+ *         description: 관리자 권한 없음
+ */
 router.post('/calculate-fee', authMiddleware, adminAuthMiddleware, (req, res) => {
   try {
     const { amount } = req.body
@@ -116,7 +226,34 @@ router.post('/calculate-fee', authMiddleware, adminAuthMiddleware, (req, res) =>
 
 // === 대량 처리 기능 ===
 
-// 대량 IOU 발행
+/**
+ * @swagger
+ * /api/admin/iou/batch-issue:
+ *   post:
+ *     summary: 대량 IOU 발행
+ *     tags: [Admin-IOU]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               transactions:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     userAddress: { type: string }
+ *                     amount: { type: number }
+ *     responses:
+ *       '200':
+ *         description: 대량 발행 처리 결과
+ *       '403':
+ *         description: 관리자 권한 없음
+ */
 router.post('/batch-issue', authMiddleware, adminAuthMiddleware, async (req, res) => {
   try {
     const { transactions } = req.body
@@ -167,7 +304,35 @@ router.post('/batch-issue', authMiddleware, adminAuthMiddleware, async (req, res
   }
 })
 
-// 대량 스왑 처리
+/**
+ * @swagger
+ * /api/admin/iou/batch-process-swap:
+ *   post:
+ *     summary: 대량 스왑 처리
+ *     tags: [Admin-IOU]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               swaps:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     userAddress: { type: string }
+ *                     swapAmount: { type: number }
+ *                     swapDetails: { type: object }
+ *     responses:
+ *       '200':
+ *         description: 대량 스왑 처리 결과
+ *       '403':
+ *         description: 관리자 권한 없음
+ */
 router.post('/batch-process-swap', authMiddleware, adminAuthMiddleware, async (req, res) => {
   try {
     const { swaps } = req.body

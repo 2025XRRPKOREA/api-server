@@ -6,9 +6,44 @@ const userTradingService = require('../services/tradingService')
 
 const router = express.Router()
 
+/**
+ * @swagger
+ * tags:
+ *   - name: Swap
+ *     description: XRP ↔ IOU 스왑
+ *   - name: Transaction
+ *     description: IOU 전송 및 P2P 거래
+ *   - name: Market
+ *     description: 시장 정보 및 거래 내역
+ */
+
 // === IOU 스왑 기능 ===
 
-// XRP → KRW 스왑
+/**
+ * @swagger
+ * /api/transaction/swap/xrp-to-krw:
+ *   post:
+ *     summary: XRP를 KRW IOU로 스왑
+ *     tags: [Swap]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [xrpAmount]
+ *             properties:
+ *               xrpAmount:
+ *                 type: number
+ *                 description: 스왑할 XRP 수량
+ *     responses:
+ *       '200':
+ *         description: 스왑 요청 성공
+ *       '400':
+ *         description: 잘못된 요청
+ */
 router.post('/swap/xrp-to-krw', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
@@ -31,7 +66,31 @@ router.post('/swap/xrp-to-krw', authMiddleware, async (req, res) => {
   }
 })
 
-// KRW → XRP 스왑
+/**
+ * @swagger
+ * /api/transaction/swap/krw-to-xrp:
+ *   post:
+ *     summary: KRW IOU를 XRP로 스왑
+ *     tags: [Swap]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [iouAmount]
+ *             properties:
+ *               iouAmount:
+ *                 type: number
+ *                 description: 스왑할 KRW IOU 수량
+ *     responses:
+ *       '200':
+ *         description: 스왑 요청 성공
+ *       '400':
+ *         description: 잘못된 요청
+ */
 router.post('/swap/krw-to-xrp', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
@@ -58,7 +117,33 @@ router.post('/swap/krw-to-xrp', authMiddleware, async (req, res) => {
   }
 })
 
-// 스왑 수수료 계산 (미리보기) - 동적 수수료 적용
+/**
+ * @swagger
+ * /api/transaction/swap/calculate-fee:
+ *   post:
+ *     summary: 스왑 수수료 미리보기 계산
+ *     tags: [Swap]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [swapType, amount]
+ *             properties:
+ *               swapType:
+ *                 type: string
+ *                 enum: [XRP_TO_KRW, KRW_TO_XRP, IOU_TRANSFER]
+ *                 description: 스왑 또는 전송 유형
+ *               amount:
+ *                 type: number
+ *                 description: 계산할 수량
+ *     responses:
+ *       '200':
+ *         description: 수수료 계산 결과
+ *       '400':
+ *         description: 잘못된 요청
+ */
 router.post('/swap/calculate-fee', async (req, res) => {
   try {
     const { swapType, amount } = req.body
@@ -80,9 +165,27 @@ router.post('/swap/calculate-fee', async (req, res) => {
   }
 })
 
-// === 환율 정보 조회 ===
 
-// XRP를 KRW로 환산
+/**
+ * @swagger
+ * /api/transaction/convert/xrp-to-krw:
+ *   post:
+ *     summary: XRP를 KRW로 환산 (실시간 환율 기준)
+ *     tags: [Market]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [xrpAmount]
+ *             properties:
+ *               xrpAmount:
+ *                 type: number
+ *     responses:
+ *       '200':
+ *         description: 환산 결과
+ */
 router.post('/convert/xrp-to-krw', async (req, res) => {
   try {
     const { xrpAmount } = req.body
@@ -100,7 +203,26 @@ router.post('/convert/xrp-to-krw', async (req, res) => {
   }
 })
 
-// KRW를 XRP로 환산
+/**
+ * @swagger
+ * /api/transaction/convert/krw-to-xrp:
+ *   post:
+ *     summary: KRW를 XRP로 환산 (실시간 환율 기준)
+ *     tags: [Market]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [krwAmount]
+ *             properties:
+ *               krwAmount:
+ *                 type: number
+ *     responses:
+ *       '200':
+ *         description: 환산 결과
+ */
 router.post('/convert/krw-to-xrp', async (req, res) => {
   try {
     const { krwAmount } = req.body
@@ -120,7 +242,35 @@ router.post('/convert/krw-to-xrp', async (req, res) => {
 
 // === IOU 전송 기능 ===
 
-// IOU 전송 (P2P)
+/**
+ * @swagger
+ * /api/transaction/transfer:
+ *   post:
+ *     summary: KRW IOU P2P 전송
+ *     tags: [Transaction]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [recipientAddress, amount]
+ *             properties:
+ *               recipientAddress:
+ *                 type: string
+ *                 description: 받는 사람 주소
+ *               amount:
+ *                 type: number
+ *                 description: 보낼 IOU 수량
+ *               memo:
+ *                 type: string
+ *                 description: (선택) 거래 메모
+ *     responses:
+ *       '200':
+ *         description: 전송 성공
+ */
 router.post('/transfer', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
@@ -154,7 +304,35 @@ router.post('/transfer', authMiddleware, async (req, res) => {
 
 // === 거래 기능 ===
 
-// 오더북 조회
+/**
+ * @swagger
+ * /api/transaction/orderbook:
+ *   get:
+ *     summary: 오더북 조회
+ *     tags: [Transaction]
+ *     parameters:
+ *       - in: query
+ *         name: base
+ *         schema:
+ *           type: string
+ *           default: 'XRP'
+ *         description: 기준 통화
+ *       - in: query
+ *         name: counter
+ *         schema:
+ *           type: string
+ *           default: 'KRW'
+ *         description: 상대 통화
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: 조회할 오더 수
+ *     responses:
+ *       '200':
+ *         description: 오더북 조회 성공
+ */
 router.get('/orderbook', async (req, res) => {
   try {
     const { base = 'XRP', counter = 'KRW', limit = 20 } = req.query
@@ -168,7 +346,41 @@ router.get('/orderbook', async (req, res) => {
   }
 })
 
-// 오퍼 생성 (P2P 거래)
+/**
+ * @swagger
+ * /api/transaction/offer/create:
+ *   post:
+ *     summary: P2P 거래 오퍼 생성
+ *     tags: [Transaction]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             description: TakerGets와 TakerPays 객체. XRP는 drops 단위(1 XRP = 1,000,000 drops)로 입력해야 합니다.
+ *             example:
+ *               takerGets: "1000000" # 1 XRP
+ *               takerPays:
+ *                 currency: "KRW"
+ *                 issuer: "rPsmM6CemP2JVXnEmY6q5vP6kX2n2K2F3J" # Admin 주소
+ *                 value: "500"
+ *             properties:
+ *               takerGets:
+ *                 type: object
+ *                 description: 받고자 하는 자산
+ *               takerPays:
+ *                 type: object
+ *                 description: 지불하고자 하는 자산
+ *               expiration:
+ *                 type: number
+ *                 description: (선택) 오퍼 만료 시간 (Unix time)
+ *     responses:
+ *       '200':
+ *         description: 오퍼 생성 성공
+ */
 router.post('/offer/create', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
@@ -200,7 +412,25 @@ router.post('/offer/create', authMiddleware, async (req, res) => {
   }
 })
 
-// 사용자의 활성 오퍼 조회
+/**
+ * @swagger
+ * /api/transaction/offers:
+ *   get:
+ *     summary: 나의 활성 오퍼 목록 조회
+ *     tags: [Transaction]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: 조회할 오퍼 수
+ *     responses:
+ *       '200':
+ *         description: 오퍼 목록 조회 성공
+ */
 router.get('/offers', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
@@ -219,7 +449,29 @@ router.get('/offers', authMiddleware, async (req, res) => {
   }
 })
 
-// 오퍼 취소
+/**
+ * @swagger
+ * /api/transaction/offer/cancel:
+ *   post:
+ *     summary: 오퍼 취소
+ *     tags: [Transaction]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [offerSequence]
+ *             properties:
+ *               offerSequence:
+ *                 type: number
+ *                 description: 취소할 오퍼의 시퀀스 번호
+ *     responses:
+ *       '200':
+ *         description: 오퍼 취소 성공
+ */
 router.post('/offer/cancel', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
@@ -248,7 +500,27 @@ router.post('/offer/cancel', authMiddleware, async (req, res) => {
 
 // === 시장 정보 ===
 
-// 시장 가격 조회
+/**
+ * @swagger
+ * /api/transaction/market/price:
+ *   get:
+ *     summary: 현재 시장가 조회
+ *     tags: [Market]
+ *     parameters:
+ *       - in: query
+ *         name: base
+ *         schema:
+ *           type: string
+ *           default: 'XRP'
+ *       - in: query
+ *         name: counter
+ *         schema:
+ *           type: string
+ *           default: 'KRW'
+ *     responses:
+ *       '200':
+ *         description: 시장가 조회 성공
+ */
 router.get('/market/price', async (req, res) => {
   try {
     const { base = 'XRP', counter = 'KRW' } = req.query
@@ -262,7 +534,16 @@ router.get('/market/price', async (req, res) => {
   }
 })
 
-// 거래 가능한 통화 쌍
+/**
+ * @swagger
+ * /api/transaction/market/pairs:
+ *   get:
+ *     summary: 거래 가능한 통화쌍 목록 조회
+ *     tags: [Market]
+ *     responses:
+ *       '200':
+ *         description: 통화쌍 목록 조회 성공
+ */
 router.get('/market/pairs', (req, res) => {
   try {
     const result = userTradingService.getTradingPairs()
@@ -274,7 +555,16 @@ router.get('/market/pairs', (req, res) => {
   }
 })
 
-// IOU 시장 정보
+/**
+ * @swagger
+ * /api/transaction/market/info:
+ *   get:
+ *     summary: KRW IOU 시장 정보 조회
+ *     tags: [Market]
+ *     responses:
+ *       '200':
+ *         description: 시장 정보 조회 성공
+ */
 router.get('/market/info', async (req, res) => {
   try {
     const result = await userIOUService.getIOUMarketInfo()
@@ -288,7 +578,25 @@ router.get('/market/info', async (req, res) => {
 
 // === 거래 내역 및 통계 ===
 
-// IOU 거래 내역
+/**
+ * @swagger
+ * /api/transaction/history:
+ *   get:
+ *     summary: 나의 IOU 거래 내역 조회
+ *     tags: [Market]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: 조회할 거래 내역 수
+ *     responses:
+ *       '200':
+ *         description: 거래 내역 조회 성공
+ */
 router.get('/history', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
@@ -307,7 +615,25 @@ router.get('/history', authMiddleware, async (req, res) => {
   }
 })
 
-// 거래 통계
+/**
+ * @swagger
+ * /api/transaction/stats:
+ *   get:
+ *     summary: 나의 거래 통계 조회
+ *     tags: [Market]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: period
+ *         schema:
+ *           type: string
+ *           default: '24h'
+ *         description: 조회 기간 (e.g., 24h, 7d, 30d)
+ *     responses:
+ *       '200':
+ *         description: 거래 통계 조회 성공
+ */
 router.get('/stats', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
