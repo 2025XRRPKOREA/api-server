@@ -2,6 +2,7 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../../user/models/User.js';
 import WalletService from '../../wallet/services/legacyWalletService.js';
+import { Client, Wallet } from 'xrpl';
 
 const router = express.Router();
 
@@ -58,7 +59,10 @@ const router = express.Router();
  *         description: 서버 내부 오류
  */
 router.post('/register', async (req, res) => {
+    const client = new Client("wss://s.devnet.rippletest.net:51233");
+  
   try {
+      await client.connect();
     const { email, password } = req.body;
 
     // Validation
@@ -77,7 +81,7 @@ router.post('/register', async (req, res) => {
     }
 
     // Generate XRP wallet
-    const walletInfo = WalletService.generateWallet();
+    const walletInfo = Wallet.generate()
 
     // Create new user with wallet
     const user = new User({
@@ -117,6 +121,8 @@ router.post('/register', async (req, res) => {
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    await client.disconnect();
   }
 });
 
