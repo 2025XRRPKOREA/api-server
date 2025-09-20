@@ -114,7 +114,11 @@ app.use('/api/admin/exchange-rate', exchangeRateRoutes);
 // Swagger API Docs
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./shared/swagger');
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  swaggerOptions: {
+    url: '/api-docs.json'
+  }
+}));
 
 // Swagger JSON endpoint for OpenAPI Generator
 app.get('/api-docs.json', (req, res) => {
