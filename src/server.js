@@ -4,6 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
+const { Client, Wallet } = require('xrpl');
 
 // Domain routes
 const authRoutes = require('./domains/auth/routes/auth');
@@ -67,8 +68,39 @@ async function initializeKRWSystem() {
   }
 }
 
+async function initAdmin(){
+    const client = new Client("wss://s.devnet.rippletest.net:51233");
+    try {
+      await client.connect();
+
+      const admin = Wallet.fromSeed("sEdSc1R6ZckunYrdi6iG61EKmDAkBY2");
+
+      const tx = {
+        TransactionType: "AccountSet",
+        Account: admin.address,
+        SetFlag: 8, 
+      };
+
+      const prepared = await client.autofill(tx);
+      const signed = admin.sign(prepared);
+      const result = await client.submitAndWait(signed.tx_blob);
+
+      console.log(JSON.stringify(result, null, 2));
+      console.log('success init admin');
+    } catch (error) {
+      console.error('fail init admin', error);
+      throw new Error('XRPL connection failed');
+    } finally {
+      await client.disconnect();
+      console.log('finish init admin');
+    }
+}
+
 // 서버 시작 전 시스템 초기화
 initializeKRWSystem();
+
+// 어드민 지갑 초기화
+initAdmin();
 
 // Domain routes
 app.use('/api/auth', authRoutes);
