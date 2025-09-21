@@ -24,6 +24,7 @@ import { fetchRate } from './tasks/swapRate.js';
 // Swagger API Docs
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './shared/swagger.js';
+import PermissionedDomain from './domains/domain/models/PermissionedDomain.js';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -81,6 +82,8 @@ async function initializeKRWSystem() {
     }
 }
 
+const toHex = (s) => Buffer.from(s, "utf8").toString("hex");
+
 async function initAdmin() {
     const client = new Client("wss://s.devnet.rippletest.net:51233");
     try {
@@ -100,6 +103,36 @@ async function initAdmin() {
 
         console.log(JSON.stringify(result, null, 2));
         console.log('success init admin');
+
+        // const permissionedDomainSetTx = {
+        //     TransactionType: "PermissionedDomainSet",
+        //     Account: admin.address,
+        //     AcceptedCredentials: [
+        //         {
+        //         Credential: {
+        //             Issuer: admin.address,
+        //             CredentialType: toHex("DEX"),
+        //         },
+        //         },
+        //     ],
+        // };
+        // const permissionedDomainSetPrepared = await client.autofill(permissionedDomainSetTx);
+        // const permissionedDomainSetSigned = admin.sign(permissionedDomainSetPrepared);
+        // const permissionedDomainSetResult = await client.submitAndWait(permissionedDomainSetSigned.tx_blob);
+        // console.log(permissionedDomainSetResult);
+
+        // const out = result.result
+        // const created = (out.meta.AffectedNodes || []).find(n => n.CreatedNode?.LedgerEntryType === "PermissionedDomain");
+        // const domainId =
+        //     created.CreatedNode.LedgerIndex ||
+        //     created.CreatedNode.NewFields.DomainID ||
+        //     null;
+        // const permissionedDomain = new PermissionedDomain({
+        //     id: domainId,
+        //     issuerAddress: admin.address
+        // });
+        // await permissionedDomain.save()
+        
     } catch (error) {
         console.error('fail init admin', error);
         throw new Error('XRPL connection failed');
